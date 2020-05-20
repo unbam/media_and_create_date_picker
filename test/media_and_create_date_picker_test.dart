@@ -1,6 +1,5 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:media_and_create_date_picker/media_and_create_date_picker.dart';
 
 void main() {
   const MethodChannel channel = MethodChannel('media_and_create_date_picker');
@@ -15,9 +14,5 @@ void main() {
 
   tearDown(() {
     channel.setMockMethodCallHandler(null);
-  });
-
-  test('getPlatformVersion', () async {
-    expect(await MediaAndCreateDatePicker.platformVersion, '42');
   });
 }

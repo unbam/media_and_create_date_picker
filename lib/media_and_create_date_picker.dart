@@ -7,11 +7,6 @@ class MediaAndCreateDatePicker {
   static const MethodChannel _channel =
       const MethodChannel('media_and_create_date_picker');
 
-  static Future<String> get platformVersion async {
-    final String version = await _channel.invokeMethod('getPlatformVersion');
-    return version;
-  }
-
   static Future<MediaData> get pickMedia async {
     final jsonStr = await _channel.invokeMethod('pickMedia');
     final jsonMap = json.decode(jsonStr);
@@ -27,7 +22,7 @@ class MediaData {
   MediaData();
 
   MediaData.fromJson(Map<String, dynamic> json) {
-    path = (json['path']);
+    path = json['path'];
     createDate = DateTime.tryParse(json["createDate"]);
 
     var mediaType = MediaType.unknown;

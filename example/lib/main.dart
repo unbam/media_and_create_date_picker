@@ -1,8 +1,9 @@
-import 'package:flutter/material.dart';
-import 'dart:async';
+import 'dart:io';
+import 'dart:typed_data';
 
-import 'package:flutter/services.dart';
+import 'package:flutter/material.dart';
 import 'package:media_and_create_date_picker/media_and_create_date_picker.dart';
+import 'package:video_thumbnail/video_thumbnail.dart';
 
 void main() {
   runApp(MyApp());
@@ -14,27 +15,15 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  String _platformVersion = 'Unknown';
+  String _path;
+  MediaType _type;
+  DateTime _createDate;
+  Uint8List _videoThumbnail;
 
   @override
   void initState() {
     super.initState();
-    initPlatformState();
-  }
-
-  Future<void> initPlatformState() async {
-    String platformVersion;
-    try {
-      platformVersion = await MediaAndCreateDatePicker.platformVersion;
-    } on PlatformException {
-      platformVersion = 'Failed to get platform version.';
-    }
-
-    if (!mounted) return;
-
-    setState(() {
-      _platformVersion = platformVersion;
-    });
+    _init();
   }
 
   @override
@@ -42,12 +31,52 @@ class _MyAppState extends State<MyApp> {
     return MaterialApp(
       home: Scaffold(
         appBar: AppBar(
-          title: const Text('Plugin example app'),
+          title: Text('Plugin example app'),
         ),
-        body: Center(
-          child: Text('Running on: $_platformVersion\n'),
+        body: Column(
+          children: <Widget>[
+            RaisedButton(
+              child: Text('Pick Media'),
+              onPressed: () async {
+                _init();
+
+                final result = await MediaAndCreateDatePicker.pickMedia;
+                if (result.type == MediaType.video) {
+                  _videoThumbnail = await VideoThumbnail.thumbnailData(
+                    video: result.path,
+                    imageFormat: ImageFormat.JPEG,
+                    maxWidth: 120,
+                    quality: 20,
+                  );
+                }
+
+                setState(() {
+                  _path = result.path;
+                  _createDate = result.createDate;
+                  _type = result.type;
+                });
+              },
+            ),
+            Center(
+              child: Text('Create Date: $_createDate'),
+            ),
+            _path != ''
+                ? Center(
+                    child: _type == MediaType.image
+                        ? Image.file(File(_path))
+                        : Image.memory(_videoThumbnail),
+                  )
+                : SizedBox.shrink(),
+          ],
         ),
       ),
     );
+  }
+
+  void _init() {
+    _path = '';
+    _type = MediaType.unknown;
+    _createDate = null;
+    _videoThumbnail = null;
   }
 }
