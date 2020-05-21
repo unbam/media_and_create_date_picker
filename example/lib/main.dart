@@ -45,7 +45,7 @@ class _MyAppState extends State<MyApp> {
                   _videoThumbnail = await VideoThumbnail.thumbnailData(
                     video: result.path,
                     imageFormat: ImageFormat.JPEG,
-                    maxWidth: 120,
+                    maxWidth: 200,
                     quality: 20,
                   );
                 }
@@ -63,7 +63,10 @@ class _MyAppState extends State<MyApp> {
             _path != ''
                 ? Center(
                     child: _type == MediaType.image
-                        ? Image.file(File(_path))
+                        ? Image.file(
+                            File(_path),
+                            width: 200,
+                          )
                         : Image.memory(_videoThumbnail),
                   )
                 : SizedBox.shrink(),

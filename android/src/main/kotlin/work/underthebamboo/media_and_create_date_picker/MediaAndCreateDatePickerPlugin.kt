@@ -1,8 +1,13 @@
 package work.underthebamboo.media_and_create_date_picker
 
+import android.os.Build
 import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi
 
 import io.flutter.embedding.engine.plugins.FlutterPlugin
+import io.flutter.embedding.engine.plugins.activity.ActivityAware
+import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
+import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
@@ -10,16 +15,15 @@ import io.flutter.plugin.common.MethodChannel.Result
 import io.flutter.plugin.common.PluginRegistry.Registrar
 
 /** MediaAndCreateDatePickerPlugin */
-public class MediaAndCreateDatePickerPlugin: FlutterPlugin, MethodCallHandler {
-  /// The MethodChannel that will the communication between Flutter and native Android
-  ///
-  /// This local reference serves to register the plugin with the Flutter Engine and unregister it
-  /// when the Flutter Engine is detached from the Activity
+public class MediaAndCreateDatePickerPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
+
   private lateinit var channel : MethodChannel
+  private var delegate: MediaAndCreateDatePickerDelegate? = null
+  private var pluginBinding: FlutterPlugin.FlutterPluginBinding? = null
+  private var activityBinding: ActivityPluginBinding? = null
 
   override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
-    channel = MethodChannel(flutterPluginBinding.getFlutterEngine().getDartExecutor(), "media_and_create_date_picker")
-    channel.setMethodCallHandler(this);
+    pluginBinding = flutterPluginBinding
   }
 
   // This static function is optional and equivalent to onAttachedToEngine. It supports the old
@@ -34,20 +38,68 @@ public class MediaAndCreateDatePickerPlugin: FlutterPlugin, MethodCallHandler {
   companion object {
     @JvmStatic
     fun registerWith(registrar: Registrar) {
-      val channel = MethodChannel(registrar.messenger(), "media_and_create_date_picker")
-      channel.setMethodCallHandler(MediaAndCreateDatePickerPlugin())
+      if (registrar.activity() == null) {
+        return
+      }
+
+      val plugin = MediaAndCreateDatePickerPlugin()
+      plugin.setup(registrar.messenger(), registrar, null)
     }
   }
 
+  @RequiresApi(Build.VERSION_CODES.M)
   override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: Result) {
-    if (call.method == "getPlatformVersion") {
-      result.success("Android ${android.os.Build.VERSION.RELEASE}")
-    } else {
-      result.notImplemented()
+    when (call.method) {
+      "pickMedia" -> {
+        delegate?.pickMedia(result)
+      }
+      else -> {
+        result.notImplemented()
+      }
     }
   }
 
   override fun onDetachedFromEngine(@NonNull binding: FlutterPlugin.FlutterPluginBinding) {
-    channel.setMethodCallHandler(null)
+    pluginBinding = null
+  }
+
+  override fun onDetachedFromActivity() {
+    delegate?.let { activityBinding?.removeActivityResultListener(it) }
+    delegate = null
+    activityBinding = null
+  }
+
+  override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) {
+    onAttachedToActivity(binding)
+  }
+
+  override fun onAttachedToActivity(binding: ActivityPluginBinding) {
+    activityBinding = binding
+    val plugin = MediaAndCreateDatePickerPlugin()
+    plugin.setup(pluginBinding!!.binaryMessenger, null, activityBinding)
+  }
+
+  override fun onDetachedFromActivityForConfigChanges() {
+    onDetachedFromActivity()
+  }
+
+  private fun setup(messenger: BinaryMessenger?, registrar: Registrar?, activityBinding: ActivityPluginBinding?) {
+    var delegate: MediaAndCreateDatePickerDelegate? = null
+
+    if (registrar != null) {
+      delegate = MediaAndCreateDatePickerDelegate(activity = registrar.activity())
+      registrar.addActivityResultListener(delegate)
+      registrar.addRequestPermissionsResultListener(delegate)
+    } else if (activityBinding != null) {
+      delegate = MediaAndCreateDatePickerDelegate(activity = activityBinding.activity)
+      activityBinding.addActivityResultListener(delegate)
+      activityBinding.addRequestPermissionsResultListener(delegate)
+    }
+
+    this.delegate = delegate
+
+    channel = MethodChannel(messenger, "media_and_create_date_picker")
+    channel.setMethodCallHandler(this)
   }
 }
+
