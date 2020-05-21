@@ -16,15 +16,25 @@ public class SwiftMediaAndCreateDatePickerPlugin: NSObject, FlutterPlugin, UINav
 
   public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
     self.controller = UIApplication.shared.keyWindow?.rootViewController as? FlutterViewController;
+    self.pickResult = result
     
     if("pickMedia" == call.method) {
-      self.pickResult = result
-      self.picker.mediaTypes = ["public.image", "public.movie"]
-      self.picker.delegate = self
-      self.controller?.present(self.picker, animated: true, completion: nil)
+      
+      if PHPhotoLibrary.authorizationStatus() != .authorized {
+          PHPhotoLibrary.requestAuthorization { status in
+               if status == .authorized {
+                   self.mediaPicker(result: result)
+               } else if status == .denied {
+                   self.pickResult?("Allow this app to access Photos.")
+               }
+          }
+      }
+      else {
+        self.mediaPicker(result: result)
+      }
     }
     else {
-      result(FlutterMethodNotImplemented)
+      self.pickResult?(FlutterMethodNotImplemented)
     }
   }
   
@@ -36,7 +46,7 @@ public class SwiftMediaAndCreateDatePickerPlugin: NSObject, FlutterPlugin, UINav
       do {
         var path : String = ""
         var type: String = "unknown"
-        
+
         // image
         if(phAsset!.mediaType == PHAssetMediaType.image) {
           type = "image"
@@ -54,11 +64,11 @@ public class SwiftMediaAndCreateDatePickerPlugin: NSObject, FlutterPlugin, UINav
         else {
           NSLog("unknown")
         }
-        
+
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
         let creationDateString = formatter.string(from: (phAsset?.creationDate)!)
-        
+
         // JSON
         var jsonObj = Dictionary<String, Any>()
         jsonObj["path"] = path
@@ -75,5 +85,11 @@ public class SwiftMediaAndCreateDatePickerPlugin: NSObject, FlutterPlugin, UINav
     } else {
       self.pickResult?(FlutterMethodNotImplemented)
     }
+  }
+  
+  private func mediaPicker(result: @escaping FlutterResult) {
+    self.picker.mediaTypes = ["public.image", "public.movie"]
+    self.picker.delegate = self
+    self.controller?.present(self.picker, animated: true, completion: nil)
   }
 }
