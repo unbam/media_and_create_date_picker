@@ -34,7 +34,11 @@ class MediaAndCreateDatePickerDelegate(private val activity: Activity) : PluginR
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?): Boolean {
         return when (requestCode) {
             REQUEST_CODE -> {
-                val uri = data?.data as Uri
+                if(data == null) {
+                    return false
+                }
+
+                val uri = data.data as Uri
                 var contentUri: Uri? = null
                 val projection: Array<out String>? = null
                 var selection: String? = null
