@@ -1,3 +1,6 @@
+## 0.0.4
+* iOS13 createTemporaryURLforVideoFile.
+
 ## 0.0.3
 * Bug fix.
 

@@ -70,6 +70,11 @@ class _MyAppState extends State<MyApp> {
                         : Image.memory(_videoThumbnail),
                   )
                 : SizedBox.shrink(),
+            _path != ''
+                ? Center(
+                    child: Text(_path),
+                  )
+                : SizedBox.shrink(),
           ],
         ),
       ),

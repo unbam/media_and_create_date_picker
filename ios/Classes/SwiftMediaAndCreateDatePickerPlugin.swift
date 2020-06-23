@@ -52,14 +52,24 @@ public class SwiftMediaAndCreateDatePickerPlugin: NSObject, FlutterPlugin, UINav
           type = "image"
           let url = info[UIImagePickerController.InfoKey.imageURL] as! URL
           path = url.path
-          //NSLog("imageURL: " + path)
+          NSLog("imageURL: " + path)
         }
         // video
         else if(phAsset!.mediaType == PHAssetMediaType.video) {
           type = "video"
           let videoURL = info[UIImagePickerController.InfoKey.mediaURL] as! URL
-          path = videoURL.path
-          //NSLog("videoURL: " + path)
+          
+          // >= iOS13
+          if #available(iOS 13.0, *) {
+            path = self.createTemporaryURLforVideoFile(url: videoURL as NSURL).path!
+            //NSLog(">=iOS13")
+          }
+          // < iOS13
+          else {
+            path = videoURL.path
+          }
+          
+          NSLog("videoURL: " + path)
         }
         else {
           NSLog("unknown")
@@ -91,5 +101,17 @@ public class SwiftMediaAndCreateDatePickerPlugin: NSObject, FlutterPlugin, UINav
     self.picker.mediaTypes = ["public.image", "public.movie"]
     self.picker.delegate = self
     self.controller?.present(self.picker, animated: true, completion: nil)
+  }
+  
+  private func createTemporaryURLforVideoFile(url: NSURL) -> NSURL {
+      let temporaryDirectoryURL = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
+      let temporaryFileURL = temporaryDirectoryURL.appendingPathComponent(url.lastPathComponent ?? "")
+      do {
+          try FileManager().copyItem(at: url.absoluteURL!, to: temporaryFileURL)
+      } catch {
+          NSLog("There was an error copying the video file to the temporary location.")
+      }
+
+      return temporaryFileURL as NSURL
   }
 }
