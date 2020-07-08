@@ -1,3 +1,6 @@
+## 0.0.5
+* Add error handling.
+
 ## 0.0.4
 * iOS13 createTemporaryURLforVideoFile.
 

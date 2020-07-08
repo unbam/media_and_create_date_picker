@@ -18,6 +18,7 @@ class MediaData {
   String path;
   DateTime createDate;
   MediaType type;
+  String error;
 
   MediaData();
 
@@ -37,6 +38,7 @@ class MediaData {
         break;
     }
     type = mediaType;
+    error = json['error'];
   }
 }
 

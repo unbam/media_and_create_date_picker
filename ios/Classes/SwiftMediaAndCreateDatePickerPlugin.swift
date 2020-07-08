@@ -22,11 +22,23 @@ public class SwiftMediaAndCreateDatePickerPlugin: NSObject, FlutterPlugin, UINav
       
       if PHPhotoLibrary.authorizationStatus() != .authorized {
           PHPhotoLibrary.requestAuthorization { status in
-               if status == .authorized {
-                   self.mediaPicker(result: result)
-               } else if status == .denied {
-                   self.pickResult?("Allow this app to access Photos.")
-               }
+            if status == .authorized {
+             self.mediaPicker(result: result)
+            } else if status == .denied {
+             // JSON
+             var jsonObj = Dictionary<String, Any>()
+             jsonObj["path"] = ""
+             jsonObj["createDate"] = ""
+             jsonObj["type"] = "unknown"
+             jsonObj["error"] = "PERMISSION_DENIED"
+              do {
+                let jsonData = try JSONSerialization.data(withJSONObject: jsonObj)
+                let jsonStr = String(bytes: jsonData, encoding: .utf8)!
+                self.pickResult?(jsonStr)
+              } catch {
+                self.pickResult?(error)
+              }
+            }
           }
       }
       else {
@@ -84,6 +96,7 @@ public class SwiftMediaAndCreateDatePickerPlugin: NSObject, FlutterPlugin, UINav
         jsonObj["path"] = path
         jsonObj["createDate"] = creationDateString
         jsonObj["type"] = type
+        jsonObj["error"] = ""
 
         let jsonData = try JSONSerialization.data(withJSONObject: jsonObj)
         let jsonStr = String(bytes: jsonData, encoding: .utf8)!

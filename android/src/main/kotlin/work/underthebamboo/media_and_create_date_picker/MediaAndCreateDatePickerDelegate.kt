@@ -151,6 +151,7 @@ class MediaAndCreateDatePickerDelegate(private val activity: Activity) : PluginR
         map["path"] = path
         map["createDate"] = dateStr
         map["type"] = type
+        map["error"] = ""
 
         return JSONObject(map).toString()
     }
