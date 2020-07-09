@@ -13,7 +13,9 @@ Add the following keys to your Info.plist file, located in <project root>/ios/Ru
 ### Android
 
 Add permission in <project root>/android/app/main/AndroidManifest.xml:
+```
 <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+```
 
 ## Getting Started
 
