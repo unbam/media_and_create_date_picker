@@ -12,11 +12,8 @@ Add the following keys to your Info.plist file, located in <project root>/ios/Ru
 
 ### Android
 
-#### API 29+
-No configuration required - the plugin should work out of the box.
-
-#### API < 29
-Add android:requestLegacyExternalStorage="true" as an attribute to the <application> tag in AndroidManifest.xml.
+Add permission in <project root>/android/app/main/AndroidManifest.xml:
+<uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
 
 ## Getting Started
 
