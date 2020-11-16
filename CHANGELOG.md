@@ -1,3 +1,6 @@
+## 0.1.0
+* Added support for iOS14.
+
 ## 0.0.5
 * Add error handling.
 

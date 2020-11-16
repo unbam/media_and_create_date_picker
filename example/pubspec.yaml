@@ -19,6 +19,7 @@ dependencies:
     # The example app is bundled with the plugin so we use a path dependency on
     # the parent directory to use the current plugin's version. 
     path: ../
+  heic_to_jpg: ^0.1.2
   video_thumbnail: ^0.2.1
 
   # The following adds the Cupertino Icons font to your application.

@@ -1,10 +1,9 @@
 import Flutter
 import UIKit
 import Photos
+import PhotosUI
 
-public class SwiftMediaAndCreateDatePickerPlugin: NSObject, FlutterPlugin, UINavigationControllerDelegate, UIImagePickerControllerDelegate {
-  
-  var picker: UIImagePickerController! = UIImagePickerController()
+public class SwiftMediaAndCreateDatePickerPlugin: NSObject, FlutterPlugin, UINavigationControllerDelegate, UIImagePickerControllerDelegate, PHPickerViewControllerDelegate {
   var controller : FlutterViewController?
   var pickResult: FlutterResult?
   
@@ -18,31 +17,26 @@ public class SwiftMediaAndCreateDatePickerPlugin: NSObject, FlutterPlugin, UINav
     self.controller = UIApplication.shared.keyWindow?.rootViewController as? FlutterViewController;
     self.pickResult = result
     
-    if("pickMedia" == call.method) {
-      
-      if PHPhotoLibrary.authorizationStatus() != .authorized {
-          PHPhotoLibrary.requestAuthorization { status in
-            if status == .authorized {
-             self.mediaPicker(result: result)
-            } else if status == .denied {
-             // JSON
-             var jsonObj = Dictionary<String, Any>()
-             jsonObj["path"] = ""
-             jsonObj["createDate"] = ""
-             jsonObj["type"] = "unknown"
-             jsonObj["error"] = "PERMISSION_DENIED"
-              do {
-                let jsonData = try JSONSerialization.data(withJSONObject: jsonObj)
-                let jsonStr = String(bytes: jsonData, encoding: .utf8)!
-                self.pickResult?(jsonStr)
-              } catch {
-                self.pickResult?(error)
-              }
-            }
-          }
+    if "pickMedia" == call.method {
+      // >= iOS14
+      if #available(iOS 14.0, *) {
+        //NSLog(">=iOS14")
+        if PHPhotoLibrary.authorizationStatus(for: .readWrite) != .authorized {
+          self.requestAuthorization(result: result)
+        }
+        else {
+          self.mediaPicker(result: result)
+        }
       }
+      // < iOS13
       else {
-        self.mediaPicker(result: result)
+        //NSLog("<iOS14")
+        if PHPhotoLibrary.authorizationStatus() != .authorized {
+          self.requestAuthorization(result: result)
+        }
+        else {
+          self.mediaPicker(result: result)
+        }
       }
     }
     else {
@@ -50,70 +44,106 @@ public class SwiftMediaAndCreateDatePickerPlugin: NSObject, FlutterPlugin, UINav
     }
   }
   
+  // For [ < iOS14 ]
   public func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
 
     var phAsset: PHAsset? = nil
     if #available(iOS 11.0, *) {
       phAsset = info[UIImagePickerController.InfoKey.phAsset] as? PHAsset
-      do {
-        var path : String = ""
-        var type: String = "unknown"
+      
+      var path : String = ""
+      var type: String = "unknown"
 
-        // image
-        if(phAsset!.mediaType == PHAssetMediaType.image) {
-          type = "image"
-          let url = info[UIImagePickerController.InfoKey.imageURL] as! URL
-          path = url.path
-          NSLog("imageURL: " + path)
-        }
-        // video
-        else if(phAsset!.mediaType == PHAssetMediaType.video) {
-          type = "video"
-          let videoURL = info[UIImagePickerController.InfoKey.mediaURL] as! URL
-          
-          // >= iOS13
-          if #available(iOS 13.0, *) {
-            path = self.createTemporaryURLforVideoFile(url: videoURL as NSURL).path!
-            //NSLog(">=iOS13")
-          }
-          // < iOS13
-          else {
-            path = videoURL.path
-          }
-          
-          NSLog("videoURL: " + path)
-        }
-        else {
-          NSLog("unknown")
-        }
-
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
-        let creationDateString = formatter.string(from: (phAsset?.creationDate)!)
-
-        // JSON
-        var jsonObj = Dictionary<String, Any>()
-        jsonObj["path"] = path
-        jsonObj["createDate"] = creationDateString
-        jsonObj["type"] = type
-        jsonObj["error"] = ""
-
-        let jsonData = try JSONSerialization.data(withJSONObject: jsonObj)
-        let jsonStr = String(bytes: jsonData, encoding: .utf8)!
-        self.controller?.dismiss(animated: true, completion: nil)
-        self.pickResult?(jsonStr)
-      } catch(let e) {
-        self.pickResult?(e)
+      // image
+      if phAsset!.mediaType == PHAssetMediaType.image {
+        type = "image"
+        let url = info[UIImagePickerController.InfoKey.imageURL] as! URL
+        path = url.path
       }
+      // video
+      else if phAsset!.mediaType == PHAssetMediaType.video {
+        type = "video"
+        let videoURL = info[UIImagePickerController.InfoKey.mediaURL] as! URL
+        
+        // >= iOS13
+        if #available(iOS 13.0, *) {
+          path = self.createTemporaryURLforVideoFile(url: videoURL as NSURL).path!
+        }
+        // < iOS13
+        else {
+          path = videoURL.path
+        }
+      }
+      
+      self.result(type: type, asset: phAsset!, path: path)
     } else {
       self.pickResult?(FlutterMethodNotImplemented)
     }
   }
   
+  // For [ >= iOS14 ]
+  @available(iOS 14, *)
+  public func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
+    picker.dismiss(animated: true)
+ 
+    if results.count == 0 {
+      self.errorResult(errMessage: "CANCEL")
+      return
+    }
+    
+    let itemProviders = results.compactMap(\.assetIdentifier)
+    let fetchResults = PHAsset.fetchAssets(withLocalIdentifiers: itemProviders, options: nil)
+
+    if let phAsset = fetchResults.firstObject as PHAsset? {
+      var type: String = "unknown"
+      if phAsset.mediaType == .image {
+        type = "image"
+      }
+      else if phAsset.mediaType == .video {
+        type = "video"
+      }
+      
+      phAsset.getURL(completionHandler: {url in
+        self.result(type: type, asset: phAsset, path: url!.path)
+      })
+    }
+    else {
+      self.errorResult(errMessage: "PERMISSION_SELECTION_DENIED")
+    }
+  }
+  
+  private func requestAuthorization(result: @escaping FlutterResult) {
+    if PHPhotoLibrary.authorizationStatus() != .authorized {
+        PHPhotoLibrary.requestAuthorization { status in
+          if status == .authorized {
+            self.mediaPicker(result: result)
+          }
+          else if status == .denied {
+            self.errorResult(errMessage: "PERMISSION_DENIED")
+          }
+        }
+    }
+    else {
+      self.mediaPicker(result: result)
+    }
+  }
+  
   private func mediaPicker(result: @escaping FlutterResult) {
-    self.picker.mediaTypes = ["public.image", "public.movie"]
-    self.picker.delegate = self
-    self.controller?.present(self.picker, animated: true, completion: nil)
+    if #available(iOS 14.0, *) {
+      let photoLibrary = PHPhotoLibrary.shared()
+      var config = PHPickerConfiguration(photoLibrary: photoLibrary)
+      config.selectionLimit = 1
+      config.filter = .any(of: [.images, .videos])
+      let picker = PHPickerViewController(configuration: config)
+      picker.delegate = self
+      self.controller?.present(picker, animated: true, completion: nil)
+    }
+    else {
+      let picker: UIImagePickerController! = UIImagePickerController()
+      picker.mediaTypes = ["public.image", "public.movie"]
+      picker.delegate = self
+      self.controller?.present(picker, animated: true, completion: nil)
+    }
   }
   
   private func createTemporaryURLforVideoFile(url: NSURL) -> NSURL {
@@ -127,4 +157,68 @@ public class SwiftMediaAndCreateDatePickerPlugin: NSObject, FlutterPlugin, UINav
 
       return temporaryFileURL as NSURL
   }
+  
+  private func result(type: String, asset: PHAsset, path: String) {
+    do {
+      let formatter = DateFormatter()
+      formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+      let creationDateString = formatter.string(from: (asset.creationDate)!)
+
+      // Result JSON
+      var jsonObj = Dictionary<String, Any>()
+      jsonObj["path"] = path
+      jsonObj["createDate"] = creationDateString
+      jsonObj["type"] = type
+      jsonObj["error"] = ""
+
+      let jsonData = try JSONSerialization.data(withJSONObject: jsonObj)
+      let jsonStr = String(bytes: jsonData, encoding: .utf8)!
+      self.controller?.dismiss(animated: true, completion: nil)
+      self.pickResult?(jsonStr)
+    } catch let e {
+      self.pickResult?(e)
+    }
+  }
+  
+  private func errorResult(errMessage: String) {
+    do {
+      // Result JSON
+      var jsonObj = Dictionary<String, Any>()
+      jsonObj["path"] = ""
+      jsonObj["createDate"] = ""
+      jsonObj["type"] = "unknown"
+      jsonObj["error"] = errMessage
+      let jsonData = try JSONSerialization.data(withJSONObject: jsonObj)
+      let jsonStr = String(bytes: jsonData, encoding: .utf8)!
+      self.pickResult?(jsonStr)
+    } catch {
+      self.pickResult?(error)
+    }
+  }
+}
+
+extension PHAsset {
+
+    func getURL(completionHandler : @escaping ((_ responseURL : URL?) -> Void)){
+        if self.mediaType == .image {
+            let options: PHContentEditingInputRequestOptions = PHContentEditingInputRequestOptions()
+            options.canHandleAdjustmentData = {(adjustmeta: PHAdjustmentData) -> Bool in
+                return true
+            }
+            self.requestContentEditingInput(with: options, completionHandler: {(contentEditingInput: PHContentEditingInput?, info: [AnyHashable : Any]) -> Void in
+                completionHandler(contentEditingInput!.fullSizeImageURL as URL?)
+            })
+        } else if self.mediaType == .video {
+            let options: PHVideoRequestOptions = PHVideoRequestOptions()
+            options.version = .original
+            PHImageManager.default().requestAVAsset(forVideo: self, options: options, resultHandler: {(asset: AVAsset?, audioMix: AVAudioMix?, info: [AnyHashable : Any]?) -> Void in
+                if let urlAsset = asset as? AVURLAsset {
+                    let localVideoUrl: URL = urlAsset.url as URL
+                    completionHandler(localVideoUrl)
+                } else {
+                    completionHandler(nil)
+                }
+            })
+        }
+    }
 }
