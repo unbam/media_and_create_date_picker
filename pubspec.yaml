@@ -1,6 +1,6 @@
 name: media_and_create_date_picker
 description: A Flutter plugin that picture and video gallery items and get item create date.
-version: 0.1.0
+version: 0.2.0
 homepage: https://github.com/unbam/media_and_create_date_picker
 
 environment:

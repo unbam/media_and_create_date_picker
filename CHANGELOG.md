@@ -1,3 +1,6 @@
+## 0.2.0
+* Separated cancellation processing and error processing.
+
 ## 0.1.0
 * Added support for iOS14.
 

@@ -81,13 +81,19 @@ public class SwiftMediaAndCreateDatePickerPlugin: NSObject, FlutterPlugin, UINav
     }
   }
   
+  // For [ < iOS14 ]
+  public func imagePickerControllerDidCancel(_ picker: UIImagePickerController){
+    picker.dismiss(animated: true)
+    self.errorResult(resultType: "cancel", errMessage: "")
+  }
+  
   // For [ >= iOS14 ]
   @available(iOS 14, *)
   public func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
     picker.dismiss(animated: true)
  
     if results.count == 0 {
-      self.errorResult(errMessage: "CANCEL")
+      self.errorResult(resultType: "cancel", errMessage: "")
       return
     }
     
@@ -108,7 +114,7 @@ public class SwiftMediaAndCreateDatePickerPlugin: NSObject, FlutterPlugin, UINav
       })
     }
     else {
-      self.errorResult(errMessage: "PERMISSION_SELECTION_DENIED")
+      self.errorResult(resultType: "error", errMessage: "PERMISSION_SELECTION_DENIED")
     }
   }
   
@@ -119,7 +125,7 @@ public class SwiftMediaAndCreateDatePickerPlugin: NSObject, FlutterPlugin, UINav
             self.mediaPicker(result: result)
           }
           else if status == .denied {
-            self.errorResult(errMessage: "PERMISSION_DENIED")
+            self.errorResult(resultType: "error", errMessage: "PERMISSION_DENIED")
           }
         }
     }
@@ -168,7 +174,8 @@ public class SwiftMediaAndCreateDatePickerPlugin: NSObject, FlutterPlugin, UINav
       var jsonObj = Dictionary<String, Any>()
       jsonObj["path"] = path
       jsonObj["createDate"] = creationDateString
-      jsonObj["type"] = type
+      jsonObj["mediaType"] = type
+      jsonObj["resultType"] = "success"
       jsonObj["error"] = ""
 
       let jsonData = try JSONSerialization.data(withJSONObject: jsonObj)
@@ -180,13 +187,14 @@ public class SwiftMediaAndCreateDatePickerPlugin: NSObject, FlutterPlugin, UINav
     }
   }
   
-  private func errorResult(errMessage: String) {
+  private func errorResult(resultType: String, errMessage: String) {
     do {
       // Result JSON
       var jsonObj = Dictionary<String, Any>()
       jsonObj["path"] = ""
       jsonObj["createDate"] = ""
-      jsonObj["type"] = "unknown"
+      jsonObj["mediaType"] = "unknown"
+      jsonObj["resultType"] = resultType
       jsonObj["error"] = errMessage
       let jsonData = try JSONSerialization.data(withJSONObject: jsonObj)
       let jsonStr = String(bytes: jsonData, encoding: .utf8)!

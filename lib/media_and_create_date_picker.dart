@@ -17,7 +17,8 @@ class MediaAndCreateDatePicker {
 class MediaData {
   String path;
   DateTime createDate;
-  MediaType type;
+  MediaType mediaType;
+  ResultType resultType;
   String error;
 
   MediaData();
@@ -27,7 +28,7 @@ class MediaData {
     createDate = DateTime.tryParse(json["createDate"]);
 
     var mediaType = MediaType.unknown;
-    switch (json["type"]) {
+    switch (json["mediaType"]) {
       case 'image':
         mediaType = MediaType.image;
         break;
@@ -37,7 +38,23 @@ class MediaData {
       default:
         break;
     }
-    type = mediaType;
+    this.mediaType = mediaType;
+
+    var resultType = ResultType.none;
+    switch (json["resultType"]) {
+      case 'success':
+        resultType = ResultType.success;
+        break;
+      case 'cancel':
+        resultType = ResultType.cancel;
+        break;
+      case 'error':
+        resultType = ResultType.error;
+        break;
+      default:
+        break;
+    }
+    this.resultType = resultType;
     error = json['error'];
   }
 }
@@ -46,4 +63,11 @@ enum MediaType {
   unknown,
   image,
   video,
+}
+
+enum ResultType {
+  none,
+  success,
+  cancel,
+  error,
 }

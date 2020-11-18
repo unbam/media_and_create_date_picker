@@ -20,6 +20,7 @@ class _MyAppState extends State<MyApp> {
   String _path;
   String _errorMessage;
   MediaType _type;
+  ResultType _resultType;
   DateTime _createDate;
   Uint8List _videoThumbnail;
 
@@ -45,7 +46,7 @@ class _MyAppState extends State<MyApp> {
                   _init();
 
                   final result = await MediaAndCreateDatePicker.pickMedia;
-                  if (result.type == MediaType.video) {
+                  if (result.mediaType == MediaType.video) {
                     _videoThumbnail = await VideoThumbnail.thumbnailData(
                       video: result.path,
                       imageFormat: ImageFormat.JPEG,
@@ -66,9 +67,11 @@ class _MyAppState extends State<MyApp> {
                   setState(() {
                     _path = filePath;
                     _createDate = result.createDate;
-                    _type = result.type;
+                    _type = result.mediaType;
+                    _resultType = result.resultType;
                     _errorMessage = result.error;
-                    print('type: $_type');
+                    print('mediaType: $_type');
+                    print('resultType: $_resultType');
                     print('path: $_path');
                     print('createDate: $_createDate');
                     print('errorMessage: $_errorMessage');
@@ -79,7 +82,10 @@ class _MyAppState extends State<MyApp> {
                 child: Text('Create Date: $_createDate'),
               ),
               Center(
-                child: Text('Type: ${_type.toString()}'),
+                child: Text('ResultType: ${_resultType.toString()}'),
+              ),
+              Center(
+                child: Text('MediaType: ${_type.toString()}'),
               ),
               Center(
                 child: Text('Error Message: $_errorMessage'),
@@ -109,6 +115,7 @@ class _MyAppState extends State<MyApp> {
   void _init() {
     _path = '';
     _type = MediaType.unknown;
+    _resultType = ResultType.none;
     _createDate = null;
     _videoThumbnail = null;
     _errorMessage = '';
