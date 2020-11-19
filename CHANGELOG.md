@@ -1,3 +1,6 @@
+## 0.2.1
+* Separate cancellation processing and error processing for Android.
+
 ## 0.2.0
 * Separated cancellation processing and error processing.
 

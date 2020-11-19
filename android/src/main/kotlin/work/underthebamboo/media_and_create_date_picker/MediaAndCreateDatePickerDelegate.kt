@@ -12,8 +12,6 @@ import android.os.Bundle
 import android.provider.DocumentsContract
 import android.provider.MediaStore
 import androidx.annotation.RequiresApi
-import androidx.core.app.ActivityCompat.requestPermissions
-import androidx.core.content.ContextCompat
 import androidx.loader.app.LoaderManager
 import androidx.loader.content.Loader
 import io.flutter.plugin.common.MethodChannel
@@ -35,7 +33,9 @@ class MediaAndCreateDatePickerDelegate(private val activity: Activity) : PluginR
         return when (requestCode) {
             REQUEST_CODE -> {
                 if(data == null) {
-                    return false
+                    val result = errorResult("cancel", "")
+                    channelResult?.success(result)
+                    return true
                 }
 
                 val uri = data.data as Uri
@@ -61,9 +61,14 @@ class MediaAndCreateDatePickerDelegate(private val activity: Activity) : PluginR
                         // Unconfirmed
                         contentUri = uri
                     }
+                    else -> {
+                        val result = errorResult("error", "NOT_SUPPORTED")
+                        channelResult?.success(result)
+                        return true
+                    }
                 }
 
-                val jsonStr = createJson(contentUri, projection, selection, selectionArgs)
+                val jsonStr = result(contentUri, projection, selection, selectionArgs)
                 channelResult?.success(jsonStr)
                 return true
             }
@@ -99,6 +104,8 @@ class MediaAndCreateDatePickerDelegate(private val activity: Activity) : PluginR
             return true
         }
 
+        val result = errorResult("error", "PERMISSION_DENIED")
+        channelResult?.success(result)
         return false
     }
 
@@ -127,7 +134,7 @@ class MediaAndCreateDatePickerDelegate(private val activity: Activity) : PluginR
     }
 
     @SuppressLint("SimpleDateFormat")
-    private fun createJson(contentUri: Uri?, projection: Array<out String>?, selection: String?, selectionArgs: Array<out String>?) : String {
+    private fun result(contentUri: Uri?, projection: Array<out String>?, selection: String?, selectionArgs: Array<out String>?) : String {
         val df = SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
         var path: String = ""
         var dateStr: String = ""
@@ -150,8 +157,21 @@ class MediaAndCreateDatePickerDelegate(private val activity: Activity) : PluginR
         val map = mutableMapOf<String, String>()
         map["path"] = path
         map["createDate"] = dateStr
-        map["type"] = type
+        map["mediaType"] = type
+        map["resultType"] = "success"
         map["error"] = ""
+
+        return JSONObject(map).toString()
+    }
+
+    private fun errorResult(resultType: String, errMessage: String) : String {
+        // JSON
+        val map = mutableMapOf<String, String>()
+        map["path"] = ""
+        map["createDate"] = ""
+        map["mediaType"] = "unknown"
+        map["resultType"] = resultType
+        map["error"] = errMessage
 
         return JSONObject(map).toString()
     }
