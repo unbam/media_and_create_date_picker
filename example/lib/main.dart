@@ -69,7 +69,7 @@ class _MyAppState extends State<MyApp> {
                     _createDate = result.createDate;
                     _type = result.mediaType;
                     _resultType = result.resultType;
-                    _errorMessage = result.error;
+                    _errorMessage = result.error.toString();
                     print('mediaType: $_type');
                     print('resultType: $_resultType');
                     print('path: $_path');

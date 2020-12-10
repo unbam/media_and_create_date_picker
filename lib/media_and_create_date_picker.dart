@@ -19,7 +19,7 @@ class MediaData {
   DateTime createDate;
   MediaType mediaType;
   ResultType resultType;
-  String error;
+  ErrorMessage error;
 
   MediaData();
 
@@ -55,7 +55,23 @@ class MediaData {
         break;
     }
     this.resultType = resultType;
-    error = json['error'];
+
+    var errorMessage = ErrorMessage.none;
+    switch (json["error"]) {
+      case 'NOT_SUPPORTED':
+        errorMessage = ErrorMessage.not_supported;
+        break;
+      case 'PERMISSION_DENIED':
+        errorMessage = ErrorMessage.permission_denied;
+        break;
+      case 'PERMISSION_SELECTION_DENIED':
+        errorMessage = ErrorMessage.permission_selection_denied;
+        break;
+      case '':
+      default:
+        break;
+    }
+    this.error = errorMessage;
   }
 }
 
@@ -70,4 +86,11 @@ enum ResultType {
   success,
   cancel,
   error,
+}
+
+enum ErrorMessage {
+  none,
+  not_supported,
+  permission_denied,
+  permission_selection_denied,
 }
