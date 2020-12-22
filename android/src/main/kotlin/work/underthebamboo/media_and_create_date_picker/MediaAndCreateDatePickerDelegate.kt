@@ -68,7 +68,7 @@ class MediaAndCreateDatePickerDelegate(private val activity: Activity) : PluginR
                     }
                 }
 
-                val jsonStr = result(contentUri, projection, selection, selectionArgs)
+                val jsonStr = result(contentUri!!, projection, selection, selectionArgs)
                 channelResult?.success(jsonStr)
                 return true
             }
@@ -134,7 +134,7 @@ class MediaAndCreateDatePickerDelegate(private val activity: Activity) : PluginR
     }
 
     @SuppressLint("SimpleDateFormat")
-    private fun result(contentUri: Uri?, projection: Array<out String>?, selection: String?, selectionArgs: Array<out String>?) : String {
+    private fun result(contentUri: Uri, projection: Array<out String>?, selection: String?, selectionArgs: Array<out String>?) : String {
         val df = SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
         var path: String = ""
         var dateStr: String = ""
@@ -161,7 +161,7 @@ class MediaAndCreateDatePickerDelegate(private val activity: Activity) : PluginR
         map["resultType"] = "success"
         map["error"] = ""
 
-        return JSONObject(map).toString()
+        return "${JSONObject(map)}"
     }
 
     private fun errorResult(resultType: String, errMessage: String) : String {
@@ -173,6 +173,6 @@ class MediaAndCreateDatePickerDelegate(private val activity: Activity) : PluginR
         map["resultType"] = resultType
         map["error"] = errMessage
 
-        return JSONObject(map).toString()
+        return "${JSONObject(map)}"
     }
 }
