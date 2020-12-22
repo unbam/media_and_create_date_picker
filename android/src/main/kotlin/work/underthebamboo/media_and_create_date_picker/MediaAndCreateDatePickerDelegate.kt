@@ -154,7 +154,7 @@ class MediaAndCreateDatePickerDelegate(private val activity: Activity) : PluginR
         //println("type: $type")
 
         // JSON
-        val map = mapOf<String, String>()
+        val map = mutableMapOf<Any?, Any?>()
         map["path"] = path
         map["createDate"] = dateStr
         map["mediaType"] = type
@@ -166,7 +166,7 @@ class MediaAndCreateDatePickerDelegate(private val activity: Activity) : PluginR
 
     private fun errorResult(resultType: String, errMessage: String) : String {
         // JSON
-        val map = mapOf<String, String>()
+        val map = mutableMapOf<Any?, Any?>()
         map["path"] = ""
         map["createDate"] = ""
         map["mediaType"] = "unknown"
