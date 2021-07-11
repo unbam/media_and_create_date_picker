@@ -15,11 +15,11 @@ class MediaAndCreateDatePicker {
 }
 
 class MediaData {
-  String path;
-  DateTime createDate;
-  MediaType mediaType;
-  ResultType resultType;
-  ErrorMessage error;
+  late String path;
+  DateTime? createDate;
+  late MediaType mediaType;
+  late ResultType resultType;
+  late ErrorMessage error;
 
   MediaData();
 

@@ -17,12 +17,12 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  String _path;
-  String _errorMessage;
-  MediaType _type;
-  ResultType _resultType;
-  DateTime _createDate;
-  Uint8List _videoThumbnail;
+  late String _path;
+  late String _errorMessage;
+  late MediaType _type;
+  late ResultType _resultType;
+  DateTime? _createDate;
+  Uint8List? _videoThumbnail;
 
   @override
   void initState() {
@@ -59,7 +59,8 @@ class _MyAppState extends State<MyApp> {
                   var filePath = '';
                   if (RegExp('.(heic|HEIC)').hasMatch(extension)) {
                     print('convert HeicToJpg');
-                    filePath = await HeicToJpg.convert(result.path);
+                    var convert = await HeicToJpg.convert(result.path);
+                    filePath = convert ?? '';
                   } else {
                     filePath = result.path;
                   }
@@ -97,7 +98,9 @@ class _MyAppState extends State<MyApp> {
                               File(_path),
                               width: 200,
                             )
-                          : Image.memory(_videoThumbnail),
+                          : _videoThumbnail != null
+                              ? Image.memory(_videoThumbnail!)
+                              : SizedBox.shrink(),
                     )
                   : SizedBox.shrink(),
               _path != ''
